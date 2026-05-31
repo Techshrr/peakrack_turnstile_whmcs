@@ -357,7 +357,10 @@ add_hook('ClientAreaHeadOutput', 1, function ($vars) {
         return '';
     }
 
-    return '<link rel="preconnect" href="https://challenges.cloudflare.com" crossorigin><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>';
+    return '<link rel="preconnect" href="https://challenges.cloudflare.com" crossorigin>'
+        . '<link rel="dns-prefetch" href="//challenges.cloudflare.com">'
+        . '<script>window.peakrackTurnstileApiReady=false;window.peakrackTurnstileOnload=function(){window.peakrackTurnstileApiReady=true;if(typeof window.peakrackTurnstileRender==="function"){window.peakrackTurnstileRender();}};</script>'
+        . '<script data-cfasync="false" src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=peakrackTurnstileOnload" async defer></script>';
 });
 
 function peakrack_turnstile_add_placement(&$placements, $enabledSetting, $customSetting, $targets, $forms = [], $purpose = '')
@@ -655,6 +658,7 @@ add_hook('ClientAreaFooterOutput', 1, function ($vars) {
     var renderAttempts = 0;
     var checkoutRelocationAttempts = 0;
     var domObserverTimer = null;
+    var renderRetryTimer = null;
 
     if (!$) {
         window.console && console.warn && console.warn('Cloudflare Turnstile: jQuery is required for WHMCS form injection.');
@@ -1341,23 +1345,79 @@ add_hook('ClientAreaFooterOutput', 1, function ($vars) {
         $('form').has('.peakrack-turnstile:not([data-peakrack-purpose="checkout-login"])').attr('data-peakrack-turnstile-form', '1');
     }
 
+    function scheduleRenderRetry(delay) {
+        if (renderRetryTimer) {
+            return;
+        }
+
+        renderRetryTimer = window.setTimeout(function () {
+            renderRetryTimer = null;
+            renderWidgets();
+        }, delay);
+    }
+
+    function scheduleWidgetReset(element, reason) {
+        if (!window.turnstile || typeof window.turnstile.reset !== 'function') {
+            return;
+        }
+
+        var widgetId = element.getAttribute('data-peakrack-widget-id');
+        if (!widgetId) {
+            return;
+        }
+
+        var count = parseInt(element.getAttribute('data-peakrack-reset-count') || '0', 10);
+        if (count >= 3) {
+            return;
+        }
+
+        element.setAttribute('data-peakrack-reset-count', String(count + 1));
+        element.setAttribute('data-peakrack-token', '');
+
+        window.setTimeout(function () {
+            if (!document.documentElement.contains(element) || !window.turnstile || typeof window.turnstile.reset !== 'function') {
+                return;
+            }
+
+            try {
+                window.turnstile.reset(widgetId);
+            } catch (error) {
+                if (window.console && console.warn) {
+                    console.warn('Cloudflare Turnstile reset failed after ' + reason + ':', error);
+                }
+            }
+        }, 2500 + count * 2500);
+    }
+
+    function mutationFromTurnstile(node) {
+        if (!node || node.nodeType !== 1) {
+            return false;
+        }
+
+        return $(node).closest('.peakrack-turnstile').length > 0;
+    }
+
     function renderWidgets() {
         if (!window.turnstile || typeof window.turnstile.render !== 'function') {
-            if (renderAttempts < 50) {
+            if (renderAttempts < 180) {
                 renderAttempts++;
-                window.setTimeout(renderWidgets, 100);
+                scheduleRenderRetry(250);
             } else if (window.console && console.warn) {
                 console.warn('Cloudflare Turnstile: api.js did not become ready.');
             }
             return;
         }
 
+        renderAttempts = 0;
+
         $('.peakrack-turnstile[data-peakrack-managed="1"]').each(function () {
             var element = this;
 
-            if (element.getAttribute('data-peakrack-rendered') === '1') {
+            if (element.getAttribute('data-peakrack-rendered') === '1' || element.getAttribute('data-peakrack-rendering') === '1') {
                 return;
             }
+
+            element.setAttribute('data-peakrack-rendering', '1');
 
             try {
                 var purpose = element.getAttribute('data-peakrack-purpose') || '';
@@ -1366,17 +1426,26 @@ add_hook('ClientAreaFooterOutput', 1, function ($vars) {
                     theme: config.theme,
                     size: 'normal',
                     action: purpose || 'form',
+                    retry: 'auto',
+                    'retry-interval': 8000,
+                    'refresh-expired': 'auto',
+                    'refresh-timeout': 'auto',
+                    'feedback-enabled': false,
                     callback: function (token) {
                         element.setAttribute('data-peakrack-token', token || '');
+                        element.setAttribute('data-peakrack-reset-count', '0');
                     },
                     'expired-callback': function () {
                         element.setAttribute('data-peakrack-token', '');
-                        window.turnstile.reset(widgetId);
+                    },
+                    'timeout-callback': function () {
+                        scheduleWidgetReset(element, 'timeout');
                     },
                     'error-callback': function (code) {
                         if (window.console && console.warn) {
                             console.warn('Cloudflare Turnstile error:', code);
                         }
+                        scheduleWidgetReset(element, 'error ' + code);
                     }
                 };
 
@@ -1388,7 +1457,9 @@ add_hook('ClientAreaFooterOutput', 1, function ($vars) {
 
                 element.setAttribute('data-peakrack-rendered', '1');
                 element.setAttribute('data-peakrack-widget-id', widgetId);
+                element.removeAttribute('data-peakrack-rendering');
             } catch (error) {
+                element.removeAttribute('data-peakrack-rendering');
                 if (window.console && console.warn) {
                     console.warn('Cloudflare Turnstile render failed:', error);
                 }
@@ -1539,8 +1610,12 @@ add_hook('ClientAreaFooterOutput', 1, function ($vars) {
         var observer = new window.MutationObserver(function (mutations) {
             for (var i = 0; i < mutations.length; i++) {
                 if (mutations[i].addedNodes && mutations[i].addedNodes.length) {
-                    scheduleDomRefresh();
-                    return;
+                    for (var j = 0; j < mutations[i].addedNodes.length; j++) {
+                        if (!mutationFromTurnstile(mutations[i].addedNodes[j])) {
+                            scheduleDomRefresh();
+                            return;
+                        }
+                    }
                 }
             }
         });
@@ -1552,6 +1627,11 @@ add_hook('ClientAreaFooterOutput', 1, function ($vars) {
     }
 
     $(function () {
+        window.peakrackTurnstileRender = function () {
+            insertWidgets();
+            renderWidgets();
+        };
+
         insertWidgets();
         scheduleCheckoutOrderRelocation();
         renderWidgets();

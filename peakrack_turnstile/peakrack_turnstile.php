@@ -24,7 +24,7 @@ function peakrack_turnstile_config()
         'description' => '使用 Cloudflare Turnstile 替换 WHMCS 默认验证码。优先适配 Nexus、Six、Twenty-One，再兼容 Lagom/Lagom2 等商业主题。',
         'author' => 'PeakRack',
         'language' => 'english',
-        'version' => '1.4.7',
+        'version' => '1.4.8',
         'fields' => [
             'site_key' => [
                 'FriendlyName' => 'Site Key / 站点密钥',
@@ -36,7 +36,7 @@ function peakrack_turnstile_config()
                 'FriendlyName' => 'Secret Key / 私钥',
                 'Type' => 'password',
                 'Size' => '50',
-                'Description' => 'Cloudflare Turnstile Secret Key，仅用于服务端校验用户提交的 token。',
+                'Description' => 'Cloudflare Turnstile Secret Key，仅用于服务端校验用户提交的 token。保存时留空会保留当前密钥。',
             ],
             'theme' => [
                 'FriendlyName' => 'Theme / 主题',
@@ -190,13 +190,13 @@ function peakrack_turnstile_admin_text(string $language, string $key): string
         'zh' => [
             'title' => 'PeakRack Turnstile Manager',
             'subtitle' => '优先适配 WHMCS 自带 Nexus、Six、Twenty-One 的登录、注册、密码重置、联系我们、提交工单、购物车/结账页面；再兼容 Lagom/Lagom2 等商业主题。Turnstile 统一显示为 Cloudflare 默认 320px 宽，可选择居中或左对齐，并位于提交动作区域上方。',
-            'version' => '版本 1.4.7',
+            'version' => '版本 1.4.8',
             'saved' => '设置已保存。',
             'keys' => 'Cloudflare 密钥',
             'site_key' => 'Site Key / 站点密钥',
             'site_key_desc' => '填写 Cloudflare Turnstile 小组件的 Site Key。',
             'secret_key' => 'Secret Key / 私钥',
-            'secret_key_desc' => '用于服务端校验，请不要填写 Site Key。',
+            'secret_key_desc' => '用于服务端校验，请不要填写 Site Key。留空保存会保留当前 Secret Key。',
             'theme' => '小组件主题',
             'theme_desc' => '建议使用 Auto，让 Cloudflare 根据访问者环境自动选择。',
             'alignment' => '显示对齐方式',
@@ -241,13 +241,13 @@ function peakrack_turnstile_admin_text(string $language, string $key): string
         'en' => [
             'title' => 'PeakRack Turnstile Manager',
             'subtitle' => 'Prioritizes WHMCS built-in Nexus, Six, and Twenty-One pages for login, registration, password reset, contact, ticket submission, and cart/checkout, then supports commercial themes such as Lagom/Lagom2. The widget keeps the standard Cloudflare 320px visual width, can be centered or left aligned, and is placed near the submit action.',
-            'version' => 'Version 1.4.7',
+            'version' => 'Version 1.4.8',
             'saved' => 'Settings saved.',
             'keys' => 'Cloudflare Keys',
             'site_key' => 'Site Key',
             'site_key_desc' => 'Enter the Cloudflare Turnstile Site Key used to render the widget.',
             'secret_key' => 'Secret Key',
-            'secret_key_desc' => 'Used only for server-side token verification. Do not enter the Site Key here.',
+            'secret_key_desc' => 'Used only for server-side token verification. Leave blank when saving to keep the current Secret Key.',
             'theme' => 'Widget Theme',
             'theme_desc' => 'Auto is recommended so Cloudflare can match the visitor environment.',
             'alignment' => 'Widget Alignment',
@@ -348,8 +348,14 @@ function peakrack_turnstile_load_settings()
 
 function peakrack_turnstile_save_settings()
 {
+    $current = peakrack_turnstile_load_settings();
+
     foreach (peakrack_turnstile_valid_settings() as $setting) {
         $value = isset($_POST[$setting]) ? trim((string) $_POST[$setting]) : '';
+
+        if ($setting === 'secret_key' && $value === '') {
+            $value = (string) ($current['secret_key'] ?? '');
+        }
 
         if (strpos($setting, 'enable_') === 0) {
             $value = $value === 'on' ? 'on' : '';
@@ -403,6 +409,18 @@ function peakrack_turnstile_text_input($settings, $key, $title, $desc, $placehol
     </div>';
 }
 
+function peakrack_turnstile_github_icon()
+{
+    return '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" focusable="false" style="display:inline-block;vertical-align:-2px;fill:currentColor;flex:0 0 auto"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.64 7.64 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>';
+}
+
+function peakrack_turnstile_github_admin_html()
+{
+    return '<a class="prt-github-link" href="https://github.com/Techshrr/whmcs_peakrack_turnstile" target="_blank" rel="noopener noreferrer" title="GitHub repository">' . peakrack_turnstile_github_icon() . '<span>GitHub</span></a>'
+        . '<a class="prt-update-badge" href="https://github.com/Techshrr/whmcs_peakrack_turnstile/releases" target="_blank" rel="noopener noreferrer" data-prk-github-update data-prk-github-repo="Techshrr/whmcs_peakrack_turnstile" data-prk-github-current="1.4.8" data-prk-github-label="New version {version}" style="display:none"></a>'
+        . '<script>(function(){if(window.PeakRackGithubUpdateCheck){window.PeakRackGithubUpdateCheck();return;}window.PeakRackGithubUpdateCheck=function(){var nodes=document.querySelectorAll("[data-prk-github-update]");if(!nodes.length||!window.fetch){return;}function normalize(v){return String(v||"").replace(/^v/i,"").replace(/[^0-9A-Za-z.\\-+]/g,"");}function compare(a,b){var aa=normalize(a).split(/[.\\-+]/),bb=normalize(b).split(/[.\\-+]/),len=Math.max(aa.length,bb.length);for(var i=0;i<len;i++){var av=aa[i]||"",bv=bb[i]||"";if(av===""&&bv!==""){return 1;}if(av!==""&&bv===""){return -1;}var an=/^\\d+$/.test(av),bn=/^\\d+$/.test(bv);if(an&&bn){var ai=parseInt(av,10),bi=parseInt(bv,10);if(ai!==bi){return ai>bi?1:-1;}}else if(av!==bv){return av>bv?1:-1;}}return 0;}function readCache(repo){try{var raw=localStorage.getItem("peakrack.github.update."+repo);if(!raw){return null;}var data=JSON.parse(raw);if(!data||!data.checkedAt||Date.now()-data.checkedAt>43200000){return null;}return data;}catch(e){return null;}}function writeCache(repo,data){try{data.checkedAt=Date.now();localStorage.setItem("peakrack.github.update."+repo,JSON.stringify(data));}catch(e){}}function fetchJson(url){var controller=window.AbortController?new AbortController():null;var timer=controller?window.setTimeout(function(){controller.abort();},2000):null;return fetch(url,{headers:{Accept:"application/vnd.github+json"},signal:controller?controller.signal:undefined}).then(function(resp){if(timer){window.clearTimeout(timer);}if(!resp.ok){throw new Error("http");}return resp.json();}).catch(function(err){if(timer){window.clearTimeout(timer);}throw err;});}function latest(repo){var base="https://api.github.com/repos/"+repo;return fetchJson(base+"/releases/latest").then(function(data){return{version:data.tag_name||"",url:data.html_url||("https://github.com/"+repo+"/releases")};}).catch(function(){return fetchJson(base+"/tags?per_page=1").then(function(tags){var tag=tags&&tags[0]?tags[0].name:"";return{version:tag,url:tag?("https://github.com/"+repo+"/releases/tag/"+encodeURIComponent(tag)):("https://github.com/"+repo+"/releases")};});});}function apply(node,info){var current=node.getAttribute("data-prk-github-current")||"";if(info&&info.version&&compare(info.version,current)>0){node.href=info.url||node.href;node.textContent=(node.getAttribute("data-prk-github-label")||"New version {version}").replace("{version}",info.version);node.style.display="inline-flex";}}Array.prototype.forEach.call(nodes,function(node){var repo=node.getAttribute("data-prk-github-repo")||"";if(!repo){return;}var cached=readCache(repo);if(cached){apply(node,cached);return;}latest(repo).then(function(info){writeCache(repo,info);apply(node,info);}).catch(function(){});});};window.PeakRackGithubUpdateCheck();})();</script>';
+}
+
 function peakrack_turnstile_output($vars)
 {
     peakrack_turnstile_migrate_legacy_settings();
@@ -422,13 +440,16 @@ function peakrack_turnstile_output($vars)
     echo '<style>
         .peakrack-turnstile-admin { max-width: 1180px; margin: 0; color: #263238; }
         .peakrack-turnstile-admin * { box-sizing: border-box; }
-        .prt-hero { position: relative; min-height: 128px; background: #0f172a; color: #fff; border-radius: 6px; padding: 22px 188px 22px 24px; margin: 0 0 18px; }
-        .prt-hero-head { display: block; }
-        .prt-hero-main { max-width: 100%; }
+        .prt-hero { background: #0f172a; color: #fff; border-radius: 6px; padding: 22px 24px; margin: 0 0 18px; }
+        .prt-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+        .prt-hero-main { flex: 1 1 auto; min-width: 0; max-width: 100%; }
         .prt-hero h2 { margin: 0 0 8px; color: #fff; font-size: 22px; }
         .prt-hero p { margin: 0; color: #cbd5e1; line-height: 1.6; }
-        .prt-head-actions { position: absolute; top: 22px; right: 24px; width: 144px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+        .prt-head-actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 360px; }
         .prt-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; border-radius: 999px; padding: 3px 10px; background: rgba(37,99,235,.18); color: #bfdbfe; border: 1px solid rgba(191,219,254,.35); font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .prt-github-link, .prt-update-badge { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 26px; border-radius: 999px; padding: 3px 10px; background: rgba(255,255,255,.08); color: #e5edf8; border: 1px solid rgba(203,213,225,.45); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+        .prt-github-link:hover, .prt-update-badge:hover { color: #fff; background: rgba(255,255,255,.14); text-decoration: none; }
+        .prt-update-badge { background: rgba(245,158,11,.16); color: #fde68a; border-color: rgba(253,230,138,.45); }
         .prt-lang { display: grid; grid-template-columns: 1fr 1fr; width: 132px; height: 38px; border: 1px solid rgba(203,213,225,.45); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,.06); }
         .prt-lang a { display: inline-flex; align-items: center; justify-content: center; min-width: 0; height: 38px; padding: 0 8px; color: #cbd5e1; text-decoration: none; font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap; }
         .prt-lang a.active { background: #2563eb; color: #fff; }
@@ -458,7 +479,7 @@ function peakrack_turnstile_output($vars)
         .prt-actions { display: flex; justify-content: flex-end; margin: 18px 0 0; }
         .prt-save { background: #2563eb; border: 0; border-radius: 4px; color: #fff; font-weight: 600; padding: 10px 22px; cursor: pointer; }
         .prt-save:hover { background: #1d4ed8; }
-        @media (max-width: 900px) { .prt-grid { grid-template-columns: 1fr; } .prt-hero { padding: 22px 20px; } .prt-head-actions { position: static; width: auto; align-items: flex-start; margin-top: 14px; } }
+        @media (max-width: 900px) { .prt-grid { grid-template-columns: 1fr; } .prt-hero { padding: 22px 20px; } .prt-hero-head { display: block; } .prt-head-actions { justify-content: flex-start; max-width: none; margin-top: 14px; } }
     </style>';
 
     echo '<div class="peakrack-turnstile-admin">
@@ -470,6 +491,7 @@ function peakrack_turnstile_output($vars)
                 </div>
                 <div class="prt-head-actions">
                     <span class="prt-badge">' . peakrack_turnstile_e($t('version')) . '</span>
+                    ' . peakrack_turnstile_github_admin_html() . '
                     <div class="prt-lang" aria-label="Admin language">
                         <a class="' . ($language === 'zh' ? 'active' : '') . '" href="' . $zhUrl . '">中文</a>
                         <a class="' . ($language === 'en' ? 'active' : '') . '" href="' . $enUrl . '">English</a>
@@ -495,7 +517,7 @@ function peakrack_turnstile_output($vars)
                 </div>
                 <div class="prt-field">
                     <label for="secret_key">' . peakrack_turnstile_e($t('secret_key')) . '</label>
-                    <input id="secret_key" type="password" name="secret_key" value="' . peakrack_turnstile_e($settings['secret_key']) . '" placeholder="0x4AAAAAA..." autocomplete="off">
+                    <input id="secret_key" type="password" name="secret_key" value="" placeholder="0x4AAAAAA..." autocomplete="off">
                     <p>' . peakrack_turnstile_e($t('secret_key_desc')) . '</p>
                 </div>
                 <div class="prt-field" style="max-width:220px">

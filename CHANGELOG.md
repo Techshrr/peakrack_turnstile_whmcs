@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 
 This project follows Semantic Versioning where practical.
 
+## [1.4.8] - 2026-06-01
+
+### Added
+
+- Added a WHMCS admin-area GitHub shortcut and browser-side update notice for published GitHub releases or tags.
+
+### Changed
+
+- Load the Turnstile API with an explicit onload callback and a Cloudflare Rocket Loader bypass.
+- Reduce client-side refreshes caused by Turnstile iframe DOM mutations.
+
+### Fixed
+
+- Added limited widget reset recovery for Turnstile timeout and error callbacks.
+- Stopped rendering the saved Turnstile Secret Key back into the WHMCS addon settings form.
+- Preserved the existing Secret Key when the settings form is saved with that field left blank.
+- Replaced the admin GitHub shortcut icon with inline SVG and adjusted the header actions so the version, repository, and language controls stay inside the panel.
+
 ## [1.4.7] - 2026-05-21
 
 ### Fixed

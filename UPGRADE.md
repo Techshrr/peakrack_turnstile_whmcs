@@ -31,6 +31,15 @@ This version does not require manual database migration.
 
 ## Version-specific notes
 
+### Upgrade from 1.4.7 to 1.4.8
+
+- No breaking changes.
+- No manual database migration is required.
+- Existing keys, page toggles, theme, alignment, and custom selectors are preserved.
+- When saving settings, leaving the Secret Key field blank keeps the existing saved key.
+- The addon admin page now includes a GitHub shortcut and a browser-side update notice. No server-side migration is required for this admin display.
+- If the client-area widget does not update immediately after upload, clear the WHMCS template cache and browser cache before retesting.
+
 ### Upgrade from 1.4.x to 1.4.7
 
 - No breaking changes.
