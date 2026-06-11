@@ -262,6 +262,20 @@ function peakrack_turnstile_post_is_valid()
     return $token !== '' && peakrack_turnstile_verify($token);
 }
 
+function peakrack_turnstile_is_admin_area()
+{
+    if (defined('ADMINAREA') && ADMINAREA) {
+        return true;
+    }
+
+    $scriptName = strtolower((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $requestUri = strtolower((string) ($_SERVER['REQUEST_URI'] ?? ''));
+
+    return strpos($scriptName, '/admin/') !== false
+        || strpos($scriptName, '\\admin\\') !== false
+        || strpos($requestUri, '/admin/') !== false;
+}
+
 function peakrack_turnstile_is_cart_login_request()
 {
     $requestUri = strtolower(rawurldecode((string) ($_SERVER['REQUEST_URI'] ?? '')));
@@ -1672,6 +1686,10 @@ add_hook('UserLoginVerification', 1, function ($vars) {
 });
 
 add_hook('ClientDetailsValidation', 1, function ($vars) {
+    if (peakrack_turnstile_is_admin_area()) {
+        return;
+    }
+
     if (!isset($_SESSION['uid']) && peakrack_turnstile_is_enabled('enable_register') && !peakrack_turnstile_post_is_valid()) {
         return [peakrack_turnstile_text('error')];
     }

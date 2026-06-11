@@ -24,7 +24,7 @@ function peakrack_turnstile_config()
         'description' => '使用 Cloudflare Turnstile 替换 WHMCS 默认验证码。优先适配 Nexus、Six、Twenty-One，再兼容 Lagom/Lagom2 等商业主题。',
         'author' => 'PeakRack',
         'language' => 'english',
-        'version' => '1.4.8',
+        'version' => '1.4.9',
         'fields' => [
             'site_key' => [
                 'FriendlyName' => 'Site Key / 站点密钥',
@@ -190,7 +190,7 @@ function peakrack_turnstile_admin_text(string $language, string $key): string
         'zh' => [
             'title' => 'PeakRack Turnstile Manager',
             'subtitle' => '优先适配 WHMCS 自带 Nexus、Six、Twenty-One 的登录、注册、密码重置、联系我们、提交工单、购物车/结账页面；再兼容 Lagom/Lagom2 等商业主题。Turnstile 统一显示为 Cloudflare 默认 320px 宽，可选择居中或左对齐，并位于提交动作区域上方。',
-            'version' => '版本 1.4.8',
+            'version' => '版本 1.4.9',
             'saved' => '设置已保存。',
             'keys' => 'Cloudflare 密钥',
             'site_key' => 'Site Key / 站点密钥',
@@ -241,7 +241,7 @@ function peakrack_turnstile_admin_text(string $language, string $key): string
         'en' => [
             'title' => 'PeakRack Turnstile Manager',
             'subtitle' => 'Prioritizes WHMCS built-in Nexus, Six, and Twenty-One pages for login, registration, password reset, contact, ticket submission, and cart/checkout, then supports commercial themes such as Lagom/Lagom2. The widget keeps the standard Cloudflare 320px visual width, can be centered or left aligned, and is placed near the submit action.',
-            'version' => 'Version 1.4.8',
+            'version' => 'Version 1.4.9',
             'saved' => 'Settings saved.',
             'keys' => 'Cloudflare Keys',
             'site_key' => 'Site Key',
@@ -417,7 +417,7 @@ function peakrack_turnstile_github_icon()
 function peakrack_turnstile_github_admin_html()
 {
     return '<a class="prt-github-link" href="https://github.com/Techshrr/whmcs_peakrack_turnstile" target="_blank" rel="noopener noreferrer" title="GitHub repository">' . peakrack_turnstile_github_icon() . '<span>GitHub</span></a>'
-        . '<a class="prt-update-badge" href="https://github.com/Techshrr/whmcs_peakrack_turnstile/releases" target="_blank" rel="noopener noreferrer" data-prk-github-update data-prk-github-repo="Techshrr/whmcs_peakrack_turnstile" data-prk-github-current="1.4.8" data-prk-github-label="New version {version}" style="display:none"></a>'
+        . '<a class="prt-update-badge" href="https://github.com/Techshrr/whmcs_peakrack_turnstile/releases" target="_blank" rel="noopener noreferrer" data-prk-github-update data-prk-github-repo="Techshrr/whmcs_peakrack_turnstile" data-prk-github-current="1.4.9" data-prk-github-label="New version {version}" style="display:none"></a>'
         . '<script>(function(){if(window.PeakRackGithubUpdateCheck){window.PeakRackGithubUpdateCheck();return;}window.PeakRackGithubUpdateCheck=function(){var nodes=document.querySelectorAll("[data-prk-github-update]");if(!nodes.length||!window.fetch){return;}function normalize(v){return String(v||"").replace(/^v/i,"").replace(/[^0-9A-Za-z.\\-+]/g,"");}function compare(a,b){var aa=normalize(a).split(/[.\\-+]/),bb=normalize(b).split(/[.\\-+]/),len=Math.max(aa.length,bb.length);for(var i=0;i<len;i++){var av=aa[i]||"",bv=bb[i]||"";if(av===""&&bv!==""){return 1;}if(av!==""&&bv===""){return -1;}var an=/^\\d+$/.test(av),bn=/^\\d+$/.test(bv);if(an&&bn){var ai=parseInt(av,10),bi=parseInt(bv,10);if(ai!==bi){return ai>bi?1:-1;}}else if(av!==bv){return av>bv?1:-1;}}return 0;}function readCache(repo){try{var raw=localStorage.getItem("peakrack.github.update."+repo);if(!raw){return null;}var data=JSON.parse(raw);if(!data||!data.checkedAt||Date.now()-data.checkedAt>43200000){return null;}return data;}catch(e){return null;}}function writeCache(repo,data){try{data.checkedAt=Date.now();localStorage.setItem("peakrack.github.update."+repo,JSON.stringify(data));}catch(e){}}function fetchJson(url){var controller=window.AbortController?new AbortController():null;var timer=controller?window.setTimeout(function(){controller.abort();},2000):null;return fetch(url,{headers:{Accept:"application/vnd.github+json"},signal:controller?controller.signal:undefined}).then(function(resp){if(timer){window.clearTimeout(timer);}if(!resp.ok){throw new Error("http");}return resp.json();}).catch(function(err){if(timer){window.clearTimeout(timer);}throw err;});}function latest(repo){var base="https://api.github.com/repos/"+repo;return fetchJson(base+"/releases/latest").then(function(data){return{version:data.tag_name||"",url:data.html_url||("https://github.com/"+repo+"/releases")};}).catch(function(){return fetchJson(base+"/tags?per_page=1").then(function(tags){var tag=tags&&tags[0]?tags[0].name:"";return{version:tag,url:tag?("https://github.com/"+repo+"/releases/tag/"+encodeURIComponent(tag)):("https://github.com/"+repo+"/releases")};});});}function apply(node,info){var current=node.getAttribute("data-prk-github-current")||"";if(info&&info.version&&compare(info.version,current)>0){node.href=info.url||node.href;node.textContent=(node.getAttribute("data-prk-github-label")||"New version {version}").replace("{version}",info.version);node.style.display="inline-flex";}}Array.prototype.forEach.call(nodes,function(node){var repo=node.getAttribute("data-prk-github-repo")||"";if(!repo){return;}var cached=readCache(repo);if(cached){apply(node,cached);return;}latest(repo).then(function(info){writeCache(repo,info);apply(node,info);}).catch(function(){});});};window.PeakRackGithubUpdateCheck();})();</script>';
 }
 
