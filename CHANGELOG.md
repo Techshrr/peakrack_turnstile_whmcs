@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 This project follows Semantic Versioning where practical.
 
+## [1.4.9] - 2026-06-12
+
+### Fixed
+
+- Prevented WHMCS admin-area client profile saves from being blocked by frontend Turnstile validation.
+- Added an admin-area guard around registration client details validation so the check only applies to client-area registration flows.
+
 ## [1.4.8] - 2026-06-01
 
 ### Added

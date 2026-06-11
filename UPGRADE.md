@@ -31,6 +31,14 @@ This version does not require manual database migration.
 
 ## Version-specific notes
 
+### Upgrade from 1.4.8 to 1.4.9
+
+- No breaking changes.
+- No manual database migration is required.
+- Existing Site Key, Secret Key, page toggles, theme, alignment, and custom selectors are preserved.
+- This release fixes a validation issue where WHMCS admin-area client profile saves could be blocked by Turnstile registration validation.
+- After upload, test saving a client profile in the WHMCS admin area and test the public registration page if registration protection is enabled.
+
 ### Upgrade from 1.4.7 to 1.4.8
 
 - No breaking changes.
